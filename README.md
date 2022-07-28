@@ -1,2 +1,2 @@
 # Detections
-This is ideas for static detectionsrules.
+This is ideas for static detection rules.
