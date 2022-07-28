@@ -1,2 +1,2 @@
-# Detections-Fuzzy
-This is ideas for Static detections rules detection-Fuzzy
+# Detections
+This is ideas for static detectionsrules.
