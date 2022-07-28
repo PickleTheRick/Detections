@@ -1,2 +1,2 @@
-# Detections-Ideas
-Detection ideas
+# Detections-Fuzzy
+Detection-Fuzzy
