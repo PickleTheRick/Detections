@@ -1,0 +1,74 @@
+type: Microsoft.SecurityInsights/alertRules
+kind: Scheduled|NRT|Fusion|MicrosoftSecurityIncidentCreation
+asurgent_id: guid # Use Powershell cmdlet (New-Guid).Guid to generate a guid
+properties:
+  displayName: template rule
+  description: |
+    Multi
+    Line
+    Description
+
+    This rule is part of Asurgent CloudOps Security, https://asurgent.com
+  tactics:
+  - InitialAccess
+  - Execution
+  techniques:
+  - T0000
+  - T0001
+  severity: Informational|Low|Medium|High
+  alertDetailsOverride:
+    # Alert Details Override make it possible to have dynamic display names, descriptions, tactics and severities for an alert by encapsulating column names in double brackets: {{columnName}}
+    # For example:
+    # alertDisplayNameFormat: {{accountEntity}} performed {{action}} on user {{targetAccount}}
+    alertDisplayNameFormat:
+    alertDescriptionFormat:
+    alertTacticsColumnName:
+    alertSeverityColumnName:
+  enabled: true|false
+  requiredDataConnectors:
+  - connectorId: connectorId
+    dataTypes:
+    - QueryTable1
+    - QueryTable2
+  query: |
+    QueryTable1
+    | where isSample == true
+    | join (QueryTable2) on sampleValue
+    | project awesomesauce
+  entityMappings:
+  - entityType: Account|Host|IP|Url|Dns|Mailbox|MailMessage|Malware|File|FileHash|Process|CloudApplication|AzureResource|RegistryKey|RegistryValue
+    fieldMappings:
+    - identifier: FullName
+      columnName: UserId
+  - entityType: IP
+    fieldMappings:
+    - identifier: Address
+      columnName: ClientIP
+  # Custom details is a dictionary of key-value-pairs
+  # To add a custom detail where the key name is 'suspisciousUrl' and the key value is stored in a column called 'phishUrl', add the following:
+  # customDetails: { suspisciousUrl: phishUrl }
+  # If no custom details should be added, replace the sample values with '{}':
+  # customDetails: {}
+  customDetails: { keyName1: keyValue1, keyName2: keyValue2 }
+  queryFrequency: P1D (24 HOURS) | PT1H (1 HOUR) | P1DT1H30M (25,5 HOURS)
+  queryPeriod: P1D (24 HOURS) | PT1H (1 HOUR) | P1DT1H30M (25,5 HOURS)
+  triggerOperator: GreaterThan|LessThan|Equal|NotEqual
+  triggerThreshold: 0
+  eventGroupingSettings:
+    aggregationKind: SingleAlert|AlertPerResult
+  suppressionEnabled: true|false
+  suppressionDuration: P1D (24 HOURS) | PT1H (1 HOUR) | P1DT1H30M (25,5 HOURS)
+  incidentConfiguration:
+    createIncident: true|false
+    groupingConfiguration:
+      enabled: true|false
+      lookbackDuration: P1D (24 HOURS) | PT1H (1 HOUR) | P1DT1H30M (25,5 HOURS)
+      groupByEntities:
+      - Account
+      - IP
+      groupByAlertDetails: []
+      matchingMethod: Selected|AnyAlert|AllEntities
+      groupByCustomDetails: []
+      reopenClosedIncident: true|false
+  tags:
+  - Asurgent CloudOps Security
