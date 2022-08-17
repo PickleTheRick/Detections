@@ -1,1 +1,86 @@
 
+type: Microsoft.SecurityInsights/alertRules
+kind: Scheduled
+asurgent_id: 170e1b1a-c49a-461b-a6fa-23060bddc540
+properties:
+  displayName: Possible ransomware stage attack has been detected to Inhibit System Recovery
+  description: |
+    Adversaries may delete or remove built-in operating system data and turn off services designed to aid in the recovery of a corrupted system to prevent recovery
+    Operating systems may contain features that can help fix corrupted systems, such as a backup catalog, volume shadow copies, and automatic repair features. 
+    Adversaries may disable or delete system recovery features to augment the effects of Data Destruction and Data Encrypted for Impact.
+    This might indicate a stage in a ransomware attack.
+
+    This rule is part of Asurgent CloudOps Security, https://asurgent.com
+  tactics:
+  - Impact
+  techniques:
+  - T1490
+  severity: High
+  alertDetailsOverride:
+    # Alert Details Override make it possible to have dynamic display names, descriptions, tactics and severities for an alert by encapsulating column names in double brackets: {{columnName}}
+    # For example:
+    # alertDisplayNameFormat: {{accountEntity}} performed {{action}} on user {{targetAccount}}
+    alertDisplayNameFormat:
+    alertDescriptionFormat:
+    alertTacticsColumnName:
+    alertSeverityColumnName:
+  enabled: true
+  requiredDataConnectors:
+  - connectorId: MicrosoftThreatProtection
+    dataTypes:
+    -  DeviceProcessEvents
+  query: |
+  let lookback = 60m;
+    let processNames = dynamic(["pwsh", "powershell", "cmd"]);
+    let encodedCommands = DeviceProcessEvents
+    | where TimeGenerated >= ago(lookback)
+    | where InitiatingProcessFileName has_any (processNames)
+    | where (ProcessCommandLine contains "powershell" or ProcessCommandLine contains "pwsh") and
+              (
+                  ProcessCommandLine matches regex "(?i)-EncodedCommand "
+                or ProcessCommandLine matches regex "(?i)-enc "
+                or ProcessCommandLine matches regex "(?i)-ec "
+                or ProcessCommandLine matches regex "(?i)-e "
+              )
+  entityMappings:
+  - fieldMappings:
+    - identifier: FullName
+      columnName: AccountUpn
+    entityType: Account
+  - fieldMappings:
+    - identifier: FullName
+      columnName: DeviceName
+    entityType: Host
+  - fieldMappings:
+    - identifier: CommandLine
+      columnName: ProcessCommandLine
+    - identifier: ProcessId
+      columnName: ProcessId
+    entityType: Process
+  # Custom details is a dictionary of key-value-pairs
+  # To add a custom detail where the key name is 'suspisciousUrl' and the key value is stored in a column called 'phishUrl', add the following:
+  # customDetails: { suspisciousUrl: phishUrl }
+  # If no custom details should be added, replace the sample values with '{}':
+  # customDetails: {}
+  customDetails: { keyName1: keyValue1, keyName2: keyValue2 }
+  queryFrequency: PT1H
+  queryPeriod: PT1H
+  triggerOperator: GreaterThan
+  triggerThreshold: 0
+  eventGroupingSettings:
+    aggregationKind: SingleAlert
+  suppressionEnabled: false
+  suppressionDuration: PT1H (1 HOUR)
+  incidentConfiguration:
+    createIncident: true
+    groupingConfiguration:
+      enabled: true|false
+      lookbackDuration: PT1H
+      groupByEntities:
+      - Host
+      groupByAlertDetails: []
+      matchingMethod: Selected|AnyAlert|AllEntities
+      groupByCustomDetails: []
+      reopenClosedIncident: true|false
+  tags:
+  - Asurgent CloudOps Security
