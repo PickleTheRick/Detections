@@ -31,8 +31,6 @@ properties:
     -  DeviceProcessEvents
   query: |
   let lookback = 60m;
-    let processNames = dynamic(["pwsh", "powershell", "cmd"]);
-    let encodedCommands = DeviceProcessEvents
     | where TimeGenerated >= ago(lookback)
     | where InitiatingProcessFileName has_any (@"vssadmin.exe", @"wbadmin.exe", @"wmic.exe", @"bcdedit.exe") and
     | where ProcessCommandLine contains "delete shadows /all /quiet" or ProcessCommandLine contains "delete catalog -quiet" or ProcessCommandLine contains "wmic shadowcopy delete" or ProcessCommandLine contains "bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures & bcdedit /set {default} recoveryenabled no"
