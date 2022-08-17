@@ -1,4 +1,3 @@
-
 type: Microsoft.SecurityInsights/alertRules
 kind: Scheduled
 asurgent_id: 170e1b1a-c49a-461b-a6fa-23060bddc540
@@ -34,15 +33,18 @@ properties:
     | where TimeGenerated >= ago(lookback)
     | where InitiatingProcessFileName has_any (@"vssadmin.exe", @"wbadmin.exe", @"wmic.exe", @"bcdedit.exe") and
     | where ProcessCommandLine contains "delete shadows /all /quiet" or ProcessCommandLine contains "delete catalog -quiet" or ProcessCommandLine contains "wmic shadowcopy delete" or ProcessCommandLine contains "bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures & bcdedit /set {default} recoveryenabled no"
-  entityMappings:
+  
+entityMappings:
   - fieldMappings:
     - identifier: FullName
       columnName: AccountUpn
     entityType: Account
+
   - fieldMappings:
     - identifier: FullName
       columnName: DeviceName
     entityType: Host
+
   - fieldMappings:
     - identifier: CommandLine
       columnName: ProcessCommandLine
@@ -54,7 +56,7 @@ properties:
   # customDetails: { suspisciousUrl: phishUrl }
   # If no custom details should be added, replace the sample values with '{}':
   # customDetails: {}
-  customDetails: { keyName1: keyValue1, keyName2: keyValue2 }
+  customDetails: {}
   queryFrequency: PT1H
   queryPeriod: PT1H
   triggerOperator: GreaterThan
@@ -62,17 +64,17 @@ properties:
   eventGroupingSettings:
     aggregationKind: SingleAlert
   suppressionEnabled: false
-  suppressionDuration: PT1H (1 HOUR)
+  suppressionDuration: PT1H
   incidentConfiguration:
     createIncident: true
     groupingConfiguration:
-      enabled: true|false
+      enabled: true
       lookbackDuration: PT1H
       groupByEntities:
       - Host
       groupByAlertDetails: []
-      matchingMethod: Selected|AnyAlert|AllEntities
+      matchingMethod: Selected
       groupByCustomDetails: []
-      reopenClosedIncident: true|false
+      reopenClosedIncident: true
   tags:
   - Asurgent CloudOps Security
