@@ -34,14 +34,8 @@ properties:
     let processNames = dynamic(["pwsh", "powershell", "cmd"]);
     let encodedCommands = DeviceProcessEvents
     | where TimeGenerated >= ago(lookback)
-    | where InitiatingProcessFileName has_any (processNames)
-    | where (ProcessCommandLine contains "powershell" or ProcessCommandLine contains "pwsh") and
-              (
-                  ProcessCommandLine matches regex "(?i)-EncodedCommand "
-                or ProcessCommandLine matches regex "(?i)-enc "
-                or ProcessCommandLine matches regex "(?i)-ec "
-                or ProcessCommandLine matches regex "(?i)-e "
-              )
+    | where InitiatingProcessFileName has_any (@"vssadmin.exe", @"wbadmin.exe", @"wmic.exe", @"bcdedit.exe") and
+    | where ProcessCommandLine contains "delete shadows /all /quiet" or ProcessCommandLine contains "delete catalog -quiet" or ProcessCommandLine contains "wmic shadowcopy delete" or ProcessCommandLine contains "bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures & bcdedit /set {default} recoveryenabled no"
   entityMappings:
   - fieldMappings:
     - identifier: FullName
