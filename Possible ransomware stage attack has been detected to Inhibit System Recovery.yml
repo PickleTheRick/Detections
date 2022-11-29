@@ -4,7 +4,7 @@ asurgent_id: 170e1b1a-c49a-461b-a6fa-23060bddc540
 properties:
   displayName: Possible ransomware stage attack has been detected to Inhibit System Recovery
   description: |
-    Adversaries may delete or remove built-in operating system data and turn off services designed to aid in the recovery of a corrupted system to prevent recovery
+    Adversaries may delete or remove built-in operating system data and turn off services designed to aid in the recovery of a corrupted system to prevent recovery.
     Operating systems may contain features that can help fix corrupted systems, such as a backup catalog, volume shadow copies, and automatic repair features. 
     Adversaries may disable or delete system recovery features to augment the effects of Data Destruction and Data Encrypted for Impact.
     This might indicate a stage in a ransomware attack.
@@ -16,9 +16,6 @@ properties:
   - T1490
   severity: High
   alertDetailsOverride:
-    # Alert Details Override make it possible to have dynamic display names, descriptions, tactics and severities for an alert by encapsulating column names in double brackets: {{columnName}}
-    # For example:
-    # alertDisplayNameFormat: {{accountEntity}} performed {{action}} on user {{targetAccount}}
     alertDisplayNameFormat:
     alertDescriptionFormat:
     alertTacticsColumnName:
@@ -28,37 +25,79 @@ properties:
   - connectorId: MicrosoftThreatProtection
     dataTypes:
     -  DeviceProcessEvents
+  - connectorId: SecurityEvents
+    dataTypes:
+    - SecurityEvent
   query: |
-  let lookback = 60m;
-    | where TimeGenerated >= ago(lookback)
-    | where InitiatingProcessFileName has_any (@"vssadmin.exe", @"wbadmin.exe", @"wmic.exe", @"bcdedit.exe") and
-    | where ProcessCommandLine contains "delete shadows /all /quiet" or ProcessCommandLine contains "delete catalog -quiet" or ProcessCommandLine contains "wmic shadowcopy delete" or ProcessCommandLine contains "bcdedit.exe /set {default} bootstatuspolicy ignoreallfailures & bcdedit /set {default} recoveryenabled no"
-  
-entityMappings:
-  - fieldMappings:
-    - identifier: FullName
-      columnName: AccountUpn
-    entityType: Account
-
-  - fieldMappings:
-    - identifier: FullName
-      columnName: DeviceName
-    entityType: Host
-
-  - fieldMappings:
-    - identifier: CommandLine
-      columnName: ProcessCommandLine
-    - identifier: ProcessId
-      columnName: ProcessId
-    entityType: Process
-  # Custom details is a dictionary of key-value-pairs
-  # To add a custom detail where the key name is 'suspisciousUrl' and the key value is stored in a column called 'phishUrl', add the following:
-  # customDetails: { suspisciousUrl: phishUrl }
-  # If no custom details should be added, replace the sample values with '{}':
-  # customDetails: {}
+    let lookback = 30m;
+    (union isfuzzy=true
+        (SecurityEvent
+        | where TimeGenerated >= ago(lookback)
+        | where EventID == 4688
+        | extend
+            FileName = tostring(split(NewProcessName, @'')[(-1)]),
+            ProcessCommandLine = CommandLine,
+            InitiatingProcessFileName = ParentProcessName,
+            ProcessIdCustomEntity = toint(NewProcessId)
+        | where FileName has_any (@"vssadmin.exe", @"wbadmin.exe", @"wmic.exe", @"bcdedit.exe") and 
+                (
+                    ProcessCommandLine has_all ("bcdedit", "/set", "{default}", "recoveryenabled no") or
+                    ProcessCommandLine has_all ("bcdedit", "/set", "{default}", "bootstatuspolicy", "ignoreallfailures") or
+                    ProcessCommandLine has_all ("delete", "shadows") or
+                    ProcessCommandLine has_all ("wmic", "shadowcopy", "delete") or
+                    ProcessCommandLine has_all ("delete", "catalog", "-quiet")
+                )
+        | project
+            TimeGenerated,
+            HostCustomEntity = Computer,
+            AccountCustomEntity = Account,
+            AccountDomain,
+            ProcessName,
+            ProcessNameFullPath = NewProcessName,
+            EventID,
+            Activity,
+            FileName,
+            ProcessCommandLine,
+            ProcessIdCustomEntity,
+            EventSourceName,
+            Type
+        ),
+        (DeviceProcessEvents 
+        | where TimeGenerated >= ago(lookback)
+        | where
+                FileName has_any (@"vssadmin.exe", @"wbadmin.exe", @"wmic.exe", @"bcdedit.exe") and
+                (
+                    ProcessCommandLine has_all ("bcdedit", "/set", "{default}", "recoveryenabled no") or
+                    ProcessCommandLine has_all ("bcdedit", "/set", "{default}", "bootstatuspolicy", "ignoreallfailures") or
+                    ProcessCommandLine has_all ("delete", "shadows") or
+                    ProcessCommandLine has_all ("wmic", "shadowcopy", "delete") or
+                    ProcessCommandLine has_all ("delete", "catalog", "-quiet")
+                )
+        | extend 
+            elevatedExecution = iff(ProcessTokenElevation == "TokenElevationTypeFull", true, false),
+            AccountCustomEntity = AccountUpn,
+            HostCustomEntity = DeviceName,
+            ProcessIdCustomEntity = toint(ProcessId)
+        )
+    )
+  entityMappings:
+    - fieldMappings:
+      - identifier: FullName
+        columnName: AccountCustomEntity
+      entityType: Account
+    - fieldMappings:
+      - identifier: FullName
+        columnName: HostCustomEntity
+      entityType: Host
+    - fieldMappings:
+      - identifier: CommandLine
+        columnName: ProcessCommandLine
+      - identifier: ProcessId
+        columnName: ProcessIdCustomEntity
+      entityType: Process
   customDetails: {}
-  queryFrequency: PT1H
-  queryPeriod: PT1H
+  queryFrequency: PT30M
+  queryPeriod: PT30M
   triggerOperator: GreaterThan
   triggerThreshold: 0
   eventGroupingSettings:
