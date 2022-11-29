@@ -2,7 +2,7 @@ type: Microsoft.SecurityInsights/alertRules
 kind: Scheduled
 asurgent_id: 170e1b1a-c49a-461b-a6fa-23060bddc540
 properties:
-  displayName: Possible ransomware stage attack has been detected to Inhibit System Recovery
+  displayName: A Possible ransomware stage attack has been detected to Inhibit System Recovery
   description: |
     Adversaries may delete or remove built-in operating system data and turn off services designed to aid in the recovery of a corrupted system to prevent recovery.
     Operating systems may contain features that can help fix corrupted systems, such as a backup catalog, volume shadow copies, and automatic repair features. 
